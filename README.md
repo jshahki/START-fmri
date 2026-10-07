@@ -25,7 +25,7 @@ mkdir -p "$SCRATCH_DIR"
 
 cd "$SCRATCH_DIR"
 
-git clone -b Sockeye_Version-3.00 --single-branch https://github.com/jshahki/START-fmri.git
+git clone -b Sockeye_Version-3.01 --single-branch https://github.com/jshahki/START-fmri.git
 
 cd /scratch/st-toddwood-1/$USER/START-fmri
 
