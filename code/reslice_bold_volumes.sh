@@ -50,13 +50,39 @@ else
     echo "[$SUBJECT] Subdirectories detected — processing each session folder separately."
 
     for SUBDIR in "${SUBDIRS[@]}"; do
+
         SUBDIR_NAME=$(basename "$SUBDIR")
         OUT_SUBDIR="$SUBJ_OUTPUT_DIR/$SUBDIR_NAME"
+
         mkdir -p "$OUT_SUBDIR"
 
         echo "Processing $SUBDIR_NAME ..."
+        echo "Input:  $SUBDIR"
+        echo "Output: $OUT_SUBDIR"
+
+        # ------------------------------------------
+        # Copy rp*.txt files, if they exist
+        # ------------------------------------------
+
+        RP_FILES=("$SUBDIR"/rp*.txt)
+        if [ -e "${RP_FILES[0]}" ]; then
+            echo "Found motion files:"
+            for RP_FILE in "${RP_FILES[@]}"; do
+                echo "  $RP_FILE"
+                cp "$RP_FILE" "$OUT_SUBDIR/"
+            done
+        else
+            echo "No rp*.txt files found in $SUBDIR"
+        fi
+
+        # ------------------------------------------
+        # Reslice BOLD files
+        # ------------------------------------------
+
         matlab -nodisplay -r "addpath('$SPM_PATH'); spm('Defaults','fMRI'); spm_jobman('initcfg'); subj_dir = '$SUBDIR'; out_dir = '$OUT_SUBDIR'; ref = '$REFERENCE_SCAN'; mkdir(out_dir); files = dir(fullfile(subj_dir, '*bold_*.nii')); for i = 1:length(files); src = fullfile(subj_dir, files(i).name); spm_reslice({ref, src}, struct('which',1,'interp',4,'wrap',[0 0 0],'mask',0,'mean',0)); movefile(fullfile(subj_dir, ['r' files(i).name]), fullfile(out_dir, ['r_' files(i).name])); end; exit;"
+
     done
+
 fi
 
 # --- Write success log ---
