@@ -42,7 +42,32 @@ mkdir -p "$SUBJ_OUTPUT_DIR"
 SUBDIRS=($(find "$SUBJ_INPUT_DIR" -mindepth 1 -maxdepth 1 -type d))
 
 if [ ${#SUBDIRS[@]} -eq 0 ]; then
+
+    # ==========================================================
+    # Case 1: No subfolders — process files directly
+    # ==========================================================
+  
     echo "[$SUBJECT] No subdirectories detected — processing .nii files directly in subject folder."
+
+    # ------------------------------------------
+    # Copy rp*.txt files, if they exist
+    # ------------------------------------------
+
+    RP_FILES=("$IN_SUBJ_DIR"/rp*.txt)
+
+    if [ -e "${RP_FILES[0]}" ]; then
+      echo "Found motion files:"
+      for RP_FILE in "${RP_FILES[@]}"; do
+          echo "  $RP_FILE"
+          cp "$RP_FILE" "$OUT_SUBJ_DIR/"
+      done
+    else
+        echo "No rp*.txt files found in $IN_SUBJ_DIR"
+    fi
+
+    # ------------------------------------------
+    # Run smoothing
+    # ------------------------------------------
 
     matlab -nodisplay -r "addpath('$SPM_PATH'); spm('Defaults','fMRI'); spm_jobman('initcfg'); subj_dir = '$SUBJ_INPUT_DIR'; out_dir = '$SUBJ_OUTPUT_DIR'; ref = '$REFERENCE_SCAN'; mkdir(out_dir); files = dir(fullfile(subj_dir, '*bold_*.nii')); for i = 1:length(files); src = fullfile(subj_dir, files(i).name); spm_reslice({ref, src}, struct('which',1,'interp',4,'wrap',[0 0 0],'mask',0,'mean',0)); movefile(fullfile(subj_dir, ['r' files(i).name]), fullfile(out_dir, ['r_' files(i).name])); end; exit;"
 
