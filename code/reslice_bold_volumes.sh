@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --time=15:00:00
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=100G
+#SBATCH --mem=250G
 #SBATCH --output=logs/reslice_%A_%a.out
 #SBATCH --error=logs/reslice_%A_%a.err
 
