@@ -53,22 +53,79 @@ echo "Running smoothing on $SUBJECT with kernel: $KERNEL"
 mapfile -t SUBDIRS < <(find "$IN_SUBJ_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
 
 if [ ${#SUBDIRS[@]} -eq 0 ]; then
+
+  # ==========================================================
   # Case 1: No subfolders — process files directly
+  # ==========================================================
+
   echo "No subfolders found in $IN_SUBJ_DIR. Processing directly..."
+
+  # ------------------------------------------
+  # Copy rp*.txt files, if they exist
+  # ------------------------------------------
+
+  RP_FILES=("$IN_SUBJ_DIR"/rp*.txt)
+
+  if [ -e "${RP_FILES[0]}" ]; then
+    echo "Found motion files:"
+    for RP_FILE in "${RP_FILES[@]}"; do
+      echo "  $RP_FILE"
+      cp "$RP_FILE" "$OUT_SUBJ_DIR/"
+    done
+  else
+    echo "No rp*.txt files found in $IN_SUBJ_DIR"
+  fi
+
+  # ------------------------------------------
+  # Run smoothing
+  # ------------------------------------------
+
   matlab -nodisplay -nosplash -r "addpath('$SPM_DIR'); addpath('$CODE_DIR'); smoothing_spm_batch('$IN_SUBJ_DIR', '$OUT_SUBJ_DIR', '$SUBJECT', [$KERNEL]); exit"
 
 else
-  # Case 2: Subfolders exist — process each subfolder individually
+
+  # ==========================================================
+  # Case 2: Subfolders exist — process each subfolder
+  # ==========================================================
+
   echo "Found ${#SUBDIRS[@]} subfolders in $IN_SUBJ_DIR."
+
   for SUBDIR in "${SUBDIRS[@]}"; do
+
     SUBNAME=$(basename "$SUBDIR")
     IN_RUN_DIR="$SUBDIR"
     OUT_RUN_DIR="$OUT_SUBJ_DIR/$SUBNAME"
+
     mkdir -p "$OUT_RUN_DIR"
 
     echo "Processing $SUBNAME for $SUBJECT..."
+    echo "Input:  $IN_RUN_DIR"
+    echo "Output: $OUT_RUN_DIR"
+
+    # ------------------------------------------
+    # Copy rp*.txt files, if they exist
+    # ------------------------------------------
+
+    RP_FILES=("$IN_RUN_DIR"/rp*.txt)
+
+    if [ -e "${RP_FILES[0]}" ]; then
+      echo "Found motion files:"
+      for RP_FILE in "${RP_FILES[@]}"; do
+        echo "  $RP_FILE"
+        cp "$RP_FILE" "$OUT_RUN_DIR/"
+      done
+    else
+      echo "No rp*.txt files found in $IN_RUN_DIR"
+    fi
+
+    # ------------------------------------------
+    # Run smoothing
+    # ------------------------------------------
+
     matlab -nodisplay -nosplash -r "addpath('$SPM_DIR'); addpath('$CODE_DIR'); smoothing_spm_batch('$IN_RUN_DIR', '$OUT_RUN_DIR', '${SUBJECT}_${SUBNAME}', [$KERNEL]); exit"
+
   done
+
 fi
 
 # Create status file
@@ -82,4 +139,3 @@ STATUS_FILE="$LOG_DIR/${SUBJECT}_$( [ $EXIT_CODE -eq 0 ] && echo SUCCESS || echo
   echo "Job ID: $SLURM_JOB_ID"
   echo "Finished: $(date)"
 } > "$STATUS_FILE"
-
